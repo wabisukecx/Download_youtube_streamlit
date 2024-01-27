@@ -2,6 +2,7 @@ import streamlit as st
 from yt_dlp import YoutubeDL
 import tempfile
 import os
+import glob
 
 # Streamlitのウェブインターフェース
 def main():
@@ -25,18 +26,22 @@ def download_video(yt_url, ope_mode):
 
     try:
         with YoutubeDL(yt_opt) as yt:
-            info_dict = yt.extract_info(yt_url, download=True)
-            filename = yt.prepare_filename(info_dict)
-            # ファイルパスの修正
-            filepath = os.path.join(temp_dir, os.path.basename(filename))
-            with open(filepath, "rb") as file:
-                st.download_button(
-                    label="ファイルをダウンロード",
-                    data=file,
-                    file_name=os.path.basename(filepath),
-                    mime="application/octet-stream"
-                )
-        st.success("ダウンロードが完了しました！ファイルをダウンロードボタンから保存してください。")
+            yt.download([yt_url])
+            # ダウンロードされたファイルを検索
+            downloaded_files = glob.glob(temp_dir + '/*')
+            if downloaded_files:
+                # 最初のダウンロードされたファイルを選択
+                filepath = downloaded_files[0]
+                with open(filepath, "rb") as file:
+                    st.download_button(
+                        label="ファイルをダウンロード",
+                        data=file,
+                        file_name=os.path.basename(filepath),
+                        mime="application/octet-stream"
+                    )
+                st.success("ダウンロードが完了しました！ファイルをダウンロードボタンから保存してください。")
+            else:
+                st.error("ダウンロードされたファイルが見つかりません。")
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
 
