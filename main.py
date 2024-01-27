@@ -1,7 +1,5 @@
 import streamlit as st
 from yt_dlp import YoutubeDL
-import os
-from tempfile import NamedTemporaryFile
 
 # Streamlitのウェブインターフェース
 def main():
@@ -15,41 +13,30 @@ def main():
 
     # ダウンロードボタン
     if st.button("ダウンロード"):
-        with NamedTemporaryFile(delete=False, suffix=".mp4") as tmpfile:
-            download_success, file_path = download_video(yt_url, ope_mode, tmpfile.name)
-            if download_success:
-                st.success("ダウンロードが完了しました！")
-                st.download_button(label="ファイルをダウンロード", data=open(file_path, "rb"), file_name=os.path.basename(file_path))
-            else:
-                st.error("ダウンロードに失敗しました。")
+        download_video(yt_url, ope_mode)
 
 # 指定したURLをダウンロードする関数
-def download_video(yt_url, ope_mode, output_path):
-    yt_opt = get_download_options(ope_mode, output_path)
+def download_video(yt_url, ope_mode):
+    yt_opt = get_download_options(ope_mode)
 
     try:
         with YoutubeDL(yt_opt) as yt:
             yt.download([yt_url])
-        return True, output_path
+        st.success("ダウンロードが完了しました！")
     except Exception as e:
         st.error(f"エラーが発生しました: {e}")
-        return False, None
 
 # ダウンロードオプションを取得する関数
-def get_download_options(ope_mode, output_path):
+def get_download_options(ope_mode):
     if ope_mode == "音声のみ":
         return {
             'format': 'bestaudio/best',
-            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3', 'preferredquality': '192'}],
-            'ffmpeg_location': "/usr/bin/ffmpeg",
-            'outtmpl': output_path
+            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],'ffmpeg_location': "/usr/bin/ffmpeg" 
         }
     else:
         return {
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}],
-            'ffmpeg_location': "/usr/bin/ffmpeg",
-            'outtmpl': output_path
+            'postprocessors': [{'key': 'FFmpegVideoConvertor', 'preferedformat': 'mp4'}],'ffmpeg_location': "/usr/bin/ffmpeg" 
         }
 
 if __name__ == '__main__':
