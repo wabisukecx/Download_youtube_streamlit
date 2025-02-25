@@ -27,6 +27,8 @@
 
 ```bash
 pip install streamlit yt_dlp
+```
+
 使い方
 このリポジトリをクローンまたはソースコードをダウンロードしてください。
 
@@ -34,10 +36,9 @@ pip install streamlit yt_dlp
 
 以下のコマンドを実行して、Streamlit アプリケーションを起動します:
 
-bash
-コピーする
-編集する
+```bash
 streamlit run your_script.py
+```
 ※ your_script.py は実際の Python ファイル名に置き換えてください。
 
 ブラウザが自動的に開かない場合は、ターミナルに表示されたローカル URL にアクセスしてください。
