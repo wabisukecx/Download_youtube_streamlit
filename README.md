@@ -54,8 +54,3 @@ streamlit run your_script.py
 
 作者
 wabisuke
-
-参考リンク
-Streamlit Documentation
-yt-dlp Documentation
-FFmpeg
