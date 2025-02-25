@@ -7,7 +7,7 @@
 import os
 import glob
 import tempfile
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import streamlit as st
 from yt_dlp import YoutubeDL
@@ -42,72 +42,74 @@ class YouTubeDownloader:
         """
         # 共通の基本設定
         common_options = {
-            'quiet': True,  # コンソール出力を抑制
-            'no_warnings': True,  # 警告メッセージを非表示
+            'quiet': True,             # コンソール出力を抑制
+            'no_warnings': True,        # 警告メッセージを非表示
             'ffmpeg_location': "/usr/bin/ffmpeg"
         }
 
-        # 音声のみモード
         if mode == "音声のみ":
+            # 音声のみモード（MP3形式に変換）
             return {
                 **common_options,
                 'format': 'bestaudio/best',
                 'postprocessors': [{
                     'key': 'FFmpegExtractAudio',
-                    'preferredcodec': 'mp3',  # MP3形式に変換
-                    'preferredquality': '192'  # 高音質設定
+                    'preferredcodec': 'mp3',
+                    'preferredquality': '192'
                 }]
             }
-        
-        # 映像モード
+
+        # 映像モード（MP4形式に変換）
         return {
             **common_options,
             'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
             'postprocessors': [{
                 'key': 'FFmpegVideoConvertor',
-                'preferedformat': 'mp4'  # MP4形式に変換
+                'preferedformat': 'mp4'
             }]
         }
 
     @staticmethod
-    def download_youtube_content(url: str, mode: str) -> Optional[str]:
+    def download_youtube_content(url: str, mode: str) -> Optional[Tuple[bytes, str]]:
         """
-        YouTubeのコンテンツを一時ディレクトリにダウンロードする.
+        YouTubeのコンテンツを一時ディレクトリにダウンロードし、ファイル内容を返す.
 
         Args:
             url (str): YouTubeの動画URL
             mode (str): ダウンロードモード（'音声のみ' または '映像'）
 
         Returns:
-            Optional[str]: ダウンロードしたファイルのパス。失敗した場合はNone
+            Optional[Tuple[bytes, str]]: ダウンロードしたファイルの内容（バイナリ）とファイル名。失敗した場合はNone
         """
         try:
-            # 一時ディレクトリを作成してダウンロード
             with tempfile.TemporaryDirectory() as temp_dir:
-                # ダウンロードオプションを取得
+                # ダウンロードオプションの取得
                 yt_opt = YouTubeDownloader.get_download_options(mode)
                 yt_opt['outtmpl'] = os.path.join(temp_dir, 'downloaded_file.%(ext)s')
 
-                # 動画/音声をダウンロード
+                # ダウンロード実行
                 with YoutubeDL(yt_opt) as yt:
                     yt.download([url])
 
-                # ダウンロードされたファイルを検索
+                # 一時ディレクトリ内のファイルを探索
                 downloaded_files = glob.glob(os.path.join(temp_dir, '*'))
-                return downloaded_files[0] if downloaded_files else None
+                if downloaded_files:
+                    file_path = downloaded_files[0]
+                    file_name = os.path.basename(file_path)
+                    with open(file_path, "rb") as f:
+                        file_data = f.read()
+                    return file_data, file_name
+                return None
 
         except Exception as error:
-            # ダウンロード中にエラーが発生した場合
             st.error(f"ダウンロード中にエラーが発生しました: {error}")
             return None
 
 
 def main():
     """YouTubeダウンロード用のメインStreamlitアプリケーション."""
-    # アプリケーションのタイトルを設定
     st.title("YouTubeダウンロードツール")
 
-    # サイドバーにアプリケーション情報を表示
     st.sidebar.header("アプリケーション情報")
     st.sidebar.info(
         "このツールはYouTubeの動画と音声をダウンロードできます。\n\n"
@@ -116,38 +118,29 @@ def main():
         "- 個人的な利用目的でのみ使用してください"
     )
 
-    # ダウンロードモードを選択
     ope_mode = st.radio(
         "処理モードを選択してください：",
         ["音声のみ", "映像"],
         help="音声のみ: MP3形式でダウンロード, 映像: MP4形式でダウンロード"
     )
 
-    # URLを入力
     yt_url = st.text_input("YouTubeのURL:", placeholder="https://www.youtube.com/watch?v=...")
 
-    # ダウンロードボタン
     if st.button("ダウンロード"):
-        # URLを検証
         if not YouTubeDownloader.validate_url(yt_url):
             st.error("無効なYouTube URLです。正しいURLを入力してください。")
             return
 
-        # ダウンロード中にスピナーを表示
         with st.spinner('ダウンロード中...'):
-            # ダウンロードを試行
-            filepath = YouTubeDownloader.download_youtube_content(yt_url, ope_mode)
-
-            # ダウンロード結果を処理
-            if filepath:
-                # ファイルをバイナリモードで開く
-                with open(filepath, "rb") as file:
-                    st.download_button(
-                        label="ファイルをダウンロード",
-                        data=file,
-                        file_name=os.path.basename(filepath),
-                        mime="application/octet-stream"
-                    )
+            result = YouTubeDownloader.download_youtube_content(yt_url, ope_mode)
+            if result:
+                file_data, file_name = result
+                st.download_button(
+                    label="ファイルをダウンロード",
+                    data=file_data,
+                    file_name=file_name,
+                    mime="application/octet-stream"
+                )
                 st.success("ダウンロードが完了しました！")
             else:
                 st.error("ダウンロードに失敗しました。URLを確認してください。")
