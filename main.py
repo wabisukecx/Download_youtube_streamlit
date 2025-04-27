@@ -7,6 +7,7 @@
 import os
 import glob
 import tempfile
+import re
 from typing import Dict, Optional, Tuple
 
 import streamlit as st
@@ -28,7 +29,7 @@ class VideoDownloader:
             bool: 有効なYouTubeまたはYoukuのURLの場合はTrue、そうでない場合はFalse
         """
         youtube_valid = url.startswith(('https://www.youtube.com/', 'https://youtu.be/'))
-        youku_valid = url.startswith(('https://v.youku.com/', 'https://m.youku.com/'))
+        youku_valid = url.startswith(('https://v.youku.com/', 'https://m.youku.com/')) or 'youku.com' in url
         return youtube_valid or youku_valid
 
     @staticmethod
@@ -44,9 +45,30 @@ class VideoDownloader:
         """
         if url.startswith(('https://www.youtube.com/', 'https://youtu.be/')):
             return 'youtube'
-        elif url.startswith(('https://v.youku.com/', 'https://m.youku.com/')):
+        elif 'youku.com' in url:
             return 'youku'
         return 'unknown'
+
+    @staticmethod
+    def normalize_youku_url(url: str) -> str:
+        """
+        Youkuの様々なURL形式を標準形式に変換する.
+
+        Args:
+            url (str): 元のYoukuのURL
+
+        Returns:
+            str: 標準化されたURL
+        """
+        if "youku.com" in url and "vid=" in url:
+            # VIDを抽出
+            vid_match = re.search(r'vid=([^&]+)', url)
+            if vid_match:
+                vid = vid_match.group(1)
+                # 標準的なYoukuのURLフォーマットに変換
+                normalized_url = f"https://v.youku.com/v_show/id_{vid}.html"
+                return normalized_url
+        return url
 
     @staticmethod
     def get_download_options(mode: str) -> Dict:
@@ -61,8 +83,8 @@ class VideoDownloader:
         """
         # 共通の基本設定
         common_options = {
-            'quiet': True,             # コンソール出力を抑制
-            'no_warnings': True,        # 警告メッセージを非表示
+            'quiet': False,             # デバッグのために出力を有効化
+            'no_warnings': False,        # デバッグのために警告も表示
             'ffmpeg_location': "/usr/bin/ffmpeg"
         }
 
@@ -101,11 +123,23 @@ class VideoDownloader:
             Optional[Tuple[bytes, str]]: ダウンロードしたファイルの内容（バイナリ）とファイル名。失敗した場合はNone
         """
         try:
+            # Youkuの場合、URLを標準形式に変換
+            source = VideoDownloader.get_video_source(url)
+            if source == 'youku':
+                original_url = url
+                url = VideoDownloader.normalize_youku_url(url)
+                if original_url != url:
+                    st.info(f"YoukuのURLを標準形式に変換しました: {url}")
+
             with tempfile.TemporaryDirectory() as temp_dir:
                 # ダウンロードオプションの取得
                 yt_opt = VideoDownloader.get_download_options(mode)
                 yt_opt['outtmpl'] = os.path.join(temp_dir, 'downloaded_file.%(ext)s')
-
+                
+                # yt-dlpのバージョン情報をログに出力（デバッグ用）
+                import yt_dlp
+                st.info(f"yt-dlpバージョン: {yt_dlp.version.__version__}")
+                
                 # ダウンロード実行
                 with YoutubeDL(yt_opt) as yt:
                     yt.download([url])
@@ -122,6 +156,17 @@ class VideoDownloader:
 
         except Exception as error:
             st.error(f"ダウンロード中にエラーが発生しました: {error}")
+            
+            # プラットフォーム固有のエラーメッセージ
+            source = VideoDownloader.get_video_source(url)
+            if source == 'youku':
+                st.warning("""
+                Youkuのダウンロードに関する注意:
+                1. yt_dlpが最新バージョンか確認してください（pip install -U yt_dlp）
+                2. Youkuは地域制限がある場合があります
+                3. 通常のYoukuのURLは https://v.youku.com/v_show/id_XXXXXX.html の形式です
+                4. 中国本土からのアクセスが必要な場合があります
+                """)
             return None
 
 
@@ -147,7 +192,18 @@ def main():
     video_url = st.text_input("YouTubeまたはYoukuのURL:", 
                             placeholder="https://www.youtube.com/watch?v=... または https://v.youku.com/...")
 
+    # 詳細設定の折りたたみセクション
+    with st.expander("詳細設定"):
+        st.checkbox("デバッグモード", value=False, key="debug_mode", 
+                    help="有効にすると詳細なログが表示されます")
+        st.selectbox("ダウンロード品質", ["最高品質", "標準品質", "低品質"], index=0, key="quality",
+                    help="動画/音声のダウンロード品質を選択します")
+
     if st.button("ダウンロード"):
+        if not video_url:
+            st.warning("URLを入力してください。")
+            return
+            
         if not VideoDownloader.validate_url(video_url):
             st.error("無効なYouTubeまたはYoukuのURLです。正しいURLを入力してください。")
             return
