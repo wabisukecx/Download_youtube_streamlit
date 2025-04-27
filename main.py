@@ -1,6 +1,6 @@
-"""YouTubeダウンロード用のStreamlitアプリケーション.
+"""YouTubeおよびYoukuダウンロード用のStreamlitアプリケーション.
 
-このモジュールは、YouTubeの動画と音声をダウンロードするStreamlitインターフェースを提供します.
+このモジュールは、YouTubeとYoukuの動画と音声をダウンロードするStreamlitインターフェースを提供します.
 著作権に配慮し、個人的な利用目的のみで使用してください.
 """
 
@@ -13,21 +13,40 @@ import streamlit as st
 from yt_dlp import YoutubeDL
 
 
-class YouTubeDownloader:
-    """YouTubeの動画と音声をダウンロードするクラス."""
+class VideoDownloader:
+    """YouTubeとYoukuの動画と音声をダウンロードするクラス."""
 
     @staticmethod
     def validate_url(url: str) -> bool:
         """
-        YouTubeのURL形式を検証する.
+        YouTubeまたはYoukuのURL形式を検証する.
 
         Args:
             url (str): 検証するURL
 
         Returns:
-            bool: 有効なYouTube URLの場合はTrue、そうでない場合はFalse
+            bool: 有効なYouTubeまたはYoukuのURLの場合はTrue、そうでない場合はFalse
         """
-        return url.startswith(('https://www.youtube.com/', 'https://youtu.be/'))
+        youtube_valid = url.startswith(('https://www.youtube.com/', 'https://youtu.be/'))
+        youku_valid = url.startswith(('https://v.youku.com/', 'https://m.youku.com/'))
+        return youtube_valid or youku_valid
+
+    @staticmethod
+    def get_video_source(url: str) -> str:
+        """
+        URLからビデオプラットフォームのソースを判定する.
+
+        Args:
+            url (str): 動画URL
+
+        Returns:
+            str: 'youtube' または 'youku'
+        """
+        if url.startswith(('https://www.youtube.com/', 'https://youtu.be/')):
+            return 'youtube'
+        elif url.startswith(('https://v.youku.com/', 'https://m.youku.com/')):
+            return 'youku'
+        return 'unknown'
 
     @staticmethod
     def get_download_options(mode: str) -> Dict:
@@ -70,12 +89,12 @@ class YouTubeDownloader:
         }
 
     @staticmethod
-    def download_youtube_content(url: str, mode: str) -> Optional[Tuple[bytes, str]]:
+    def download_video_content(url: str, mode: str) -> Optional[Tuple[bytes, str]]:
         """
-        YouTubeのコンテンツを一時ディレクトリにダウンロードし、ファイル内容を返す.
+        YouTubeまたはYoukuのコンテンツを一時ディレクトリにダウンロードし、ファイル内容を返す.
 
         Args:
-            url (str): YouTubeの動画URL
+            url (str): 動画URL（YouTubeまたはYouku）
             mode (str): ダウンロードモード（'音声のみ' または '映像'）
 
         Returns:
@@ -84,7 +103,7 @@ class YouTubeDownloader:
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
                 # ダウンロードオプションの取得
-                yt_opt = YouTubeDownloader.get_download_options(mode)
+                yt_opt = VideoDownloader.get_download_options(mode)
                 yt_opt['outtmpl'] = os.path.join(temp_dir, 'downloaded_file.%(ext)s')
 
                 # ダウンロード実行
@@ -107,15 +126,16 @@ class YouTubeDownloader:
 
 
 def main():
-    """YouTubeダウンロード用のメインStreamlitアプリケーション."""
-    st.title("YouTubeダウンロードツール")
+    """YouTubeおよびYoukuダウンロード用のメインStreamlitアプリケーション."""
+    st.title("YouTube・Youkuダウンロードツール")
 
     st.sidebar.header("アプリケーション情報")
     st.sidebar.info(
-        "このツールはYouTubeの動画と音声をダウンロードできます。\n\n"
+        "このツールはYouTubeとYoukuの動画と音声をダウンロードできます。\n\n"
         "注意:\n"
         "- 著作権に注意してください\n"
-        "- 個人的な利用目的でのみ使用してください"
+        "- 個人的な利用目的でのみ使用してください\n"
+        "- Youkuの動画は地域制限により利用できない場合があります"
     )
 
     ope_mode = st.radio(
@@ -124,15 +144,19 @@ def main():
         help="音声のみ: MP3形式でダウンロード, 映像: MP4形式でダウンロード"
     )
 
-    yt_url = st.text_input("YouTubeのURL:", placeholder="https://www.youtube.com/watch?v=...")
+    video_url = st.text_input("YouTubeまたはYoukuのURL:", 
+                            placeholder="https://www.youtube.com/watch?v=... または https://v.youku.com/...")
 
     if st.button("ダウンロード"):
-        if not YouTubeDownloader.validate_url(yt_url):
-            st.error("無効なYouTube URLです。正しいURLを入力してください。")
+        if not VideoDownloader.validate_url(video_url):
+            st.error("無効なYouTubeまたはYoukuのURLです。正しいURLを入力してください。")
             return
 
-        with st.spinner('ダウンロード中...'):
-            result = YouTubeDownloader.download_youtube_content(yt_url, ope_mode)
+        # URLのソースを取得（YouTubeかYoukuか）
+        source = VideoDownloader.get_video_source(video_url)
+        
+        with st.spinner(f'{source.capitalize()}からダウンロード中...'):
+            result = VideoDownloader.download_video_content(video_url, ope_mode)
             if result:
                 file_data, file_name = result
                 st.download_button(
@@ -144,6 +168,8 @@ def main():
                 st.success("ダウンロードが完了しました！")
             else:
                 st.error("ダウンロードに失敗しました。URLを確認してください。")
+                if source == 'youku':
+                    st.warning("Youkuの動画は地域制限や最新の仕様変更により、ダウンロードできない場合があります。")
 
 
 if __name__ == '__main__':
