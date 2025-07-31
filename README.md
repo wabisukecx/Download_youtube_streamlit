@@ -1,80 +1,229 @@
-# YouTube & Youku Download Tool
+# YouTube・Youkuダウンロードツール
 
-This Streamlit application is a tool for downloading videos and audio from YouTube and Youku. Users can select between "audio only" or "video" download modes and retrieve files after downloading.
+このStreamlitアプリケーションは、YouTubeとYoukuから動画と音声をダウンロードするためのツールです。403エラー対策を重視し、Streamlit Cloud環境での動作を最適化した設計になっています。
 
-> **Important Notice:**  
-> - Please use this tool for personal purposes only.  
-> - Be careful when downloading copyrighted content.  
-> - Please comply with YouTube's and Youku's Terms of Service when using this tool.
-> - Youku content may be subject to regional restrictions.
+> **重要な注意事項**  
+> - このツールは個人利用のみを目的としています
+> - 著作権で保護されたコンテンツのダウンロードには十分注意してください
+> - YouTubeとYoukuの利用規約を遵守してください
+> - Youkuのコンテンツは地域制限の対象となる場合があります
+> - 教育目的でのみ提供されており、著作権侵害を助長するものではありません
 
-## Features
+## 主な機能
 
-This application offers two primary download modes to suit different user needs. The audio-only mode extracts high-quality MP3 audio files at 192kbps from both YouTube and Youku videos, making it perfect for music or podcast content. The video download mode captures complete videos in MP4 format, preserving both visual and audio content with the best available quality.
+### ダウンロードモード
+- **音声のみモード**: 高品質なMP3音声ファイル（192kbps）を抽出
+- **映像モード**: 完全な動画をMP4形式で保存（最高画質）
 
-## Installation
+### 403エラー対策機能
+- 複数回のリトライ機能
+- 強化されたユーザーエージェント設定
+- 地域制限バイパス機能
+- ブラウザクッキー使用オプション
+- キャッシュクリア機能
+- 段階的待機時間の実装
 
-### Prerequisites
+### Streamlit Cloud最適化
+- Cloud環境での動作に特化した設定
+- ffmpegの自動検出
+- 環境固有のキャッシュ管理
+- 詳細なエラー診断とトラブルシューティング
 
-Before installing this application, ensure that Python 3.7 or later is installed on your system. Additionally, you'll need to install ffmpeg, which is essential for audio and video processing. The ffmpeg binary must be properly configured in your system's PATH environment variable.
+## 動作環境
 
-For Windows users, download the ffmpeg binaries from the official ffmpeg website at https://ffmpeg.org/download.html and configure your system PATH to include the ffmpeg installation directory.
+### 必要なシステム要件
+- Python 3.7以上
+- Streamlit Cloud環境（推奨）
+- ffmpeg（packages.txtで自動インストール）
 
-### Installing Required Packages
+### サポートプラットフォーム
+- **YouTube**: 完全対応（すべてのURL形式）
+- **Youku**: 地域制限および仕様変更に対応
 
-Install the necessary Python libraries by running the following command in your terminal or command prompt:
+## インストールと設定
 
+### Streamlit Cloudでのデプロイ
+1. GitHubリポジトリをフォークまたはクローン
+2. Streamlit Cloudアカウントでリポジトリを接続
+3. 自動的にデプロイが開始されます
+
+### ローカル環境での実行
 ```bash
-pip install streamlit yt_dlp
+# リポジトリのクローン
+git clone [リポジトリURL]
+cd youtube-youku-downloader
+
+# 必要なパッケージのインストール
+pip install -r requirements.txt
+
+# Streamlitアプリの起動
+streamlit run main.py
 ```
 
-## Usage
+## 使用方法
 
-To get started with the application, first clone this repository or download the source code to your local machine. Once you have the files, navigate to the application directory using your terminal or command prompt.
+### 基本的な使い方
+1. アプリケーションを起動
+2. ダウンロードモード（音声のみ/映像）を選択
+3. YouTubeまたはYoukuのURLを入力
+4. 必要に応じて403エラー対策オプションを設定
+5. 「ダウンロード」ボタンをクリック
+6. 処理完了後、ファイルをダウンロード
 
-Launch the Streamlit application by executing `streamlit run main.py` in your terminal. The application will start a local web server, and your default browser should automatically open to display the interface. If the browser doesn't open automatically, you can manually navigate to the local URL that appears in your terminal output.
+### サポートするURL形式
 
-The application interface is straightforward to use. Simply enter a YouTube or Youku video URL into the input field and click the "Download" button. The application supports various URL formats including standard YouTube URLs like `https://www.youtube.com/watch?v=...` and shortened URLs like `https://youtu.be/...`. For Youku, you can use URLs in the format `https://v.youku.com/v_show/id_XXXXXX.html` or other Youku formats, which will be automatically normalized to the standard format.
+#### YouTube
+- `https://www.youtube.com/watch?v=XXXXXXXXX`
+- `https://youtu.be/XXXXXXXXX`
+- その他のYouTube URL形式
 
-After processing, the application will generate a file according to your selected download mode and provide a download link for you to retrieve the processed content.
+#### Youku
+- `https://v.youku.com/v_show/id_XXXXXXXXX.html`
+- `https://m.youku.com/video/id_XXXXXXXXX.html`
+- その他のYouku URL形式（自動で標準形式に変換）
 
-## Important Notes
+### 403エラー対策オプション
 
-### Copyright Notice
-This tool is designed for educational and personal use only and is not intended to facilitate unauthorized downloading of copyrighted content. Users must strictly adhere to personal use guidelines and comply with both YouTube's and Youku's Terms of Service. Always respect intellectual property rights and ensure you have appropriate permissions before downloading any content.
+#### ブラウザクッキー使用
+- Firefoxのクッキーを利用してダウンロード
+- 一部の制限動画に有効
 
-### Error Handling
-When errors occur during the download process, the application displays detailed error messages to help diagnose the issue. These messages are designed to guide you toward a solution, whether the problem relates to URL validity, video availability, or network connectivity.
+#### キャッシュクリア
+- 古いキャッシュが原因の403エラーを防止
+- ダウンロード前の自動クリアまたは手動クリア
 
-## Technical Details
+#### 詳細設定
+- デバッグモード: 詳細なログ表示
+- 品質設定: 最高品質/標準品質/低品質
 
-The application utilizes modern technologies to provide reliable downloading capabilities. In audio mode, the system downloads the best available audio stream and converts it to MP3 format at 192kbps bitrate, ensuring high-quality audio output. Video mode captures the highest quality video available in MP4 format while preserving the original audio track.
+## トラブルシューティング
 
-The application supports two major video platforms. YouTube functionality is fully supported with comprehensive format compatibility, while Youku support includes automatic URL normalization and consideration for regional restrictions. The underlying technology stack consists of Streamlit for the web interface, yt-dlp for the core downloading functionality, and ffmpeg for audio and video processing tasks.
+### 403エラーが発生する場合
 
-## Troubleshooting
+#### Streamlit Cloud環境での対処法
+1. **requirements.txtの確認**
+   - `yt-dlp>=2025.01.15` が記載されているか確認
+   - 必要に応じてGitHubで更新
 
-### Common Issues
-Most download failures stem from a few common causes. If ffmpeg is not properly installed or configured in your system PATH, the application will be unable to process audio and video files. Network connectivity issues can also prevent successful downloads, so ensure your internet connection is stable and reliable.
+2. **アプリの再デプロイ**
+   - GitHubでコミット後、自動再デプロイを待機
+   - Streamlit Cloudで手動再起動
 
-Video accessibility is another frequent issue. Some videos may be private, deleted, or subject to regional restrictions that prevent downloading. Always verify that the video URL is correct and that the content is publicly accessible before attempting to download.
+3. **設定オプションの活用**
+   - 「ブラウザクッキーを使用」をON
+   - 「ダウンロード前にキャッシュをクリア」をON
 
-### Error Diagnosis
-The application provides comprehensive error messages to help identify and resolve issues quickly. When troubleshooting persistent problems, first verify that your internet connection is stable and that the target video is not region-restricted, private, or deleted.
+4. **代替手段**
+   - 時間をおいて再試行
+   - 異なる動画で動作確認
 
-### Youku-Specific Considerations
-Youku content presents unique challenges due to regional restrictions and platform-specific requirements. The application automatically normalizes Youku URLs to the standard format `https://v.youku.com/v_show/id_XXXXXX.html`, but some content may still be geographically restricted and require access from mainland China.
+### よくある問題と解決策
 
-For optimal Youku compatibility, ensure that yt-dlp is updated to the latest version, as the platform frequently updates its streaming protocols. If you encounter persistent issues with Youku content, the restriction may be related to your geographic location or the specific content's availability policies.
+#### ネットワーク関連
+- インターネット接続の確認
+- プロキシ設定の確認
+- VPN使用時の影響
 
-## License
+#### 動画アクセス関連
+- 動画の公開状態確認
+- 地域制限の確認
+- プライベート動画でないか確認
 
-This project is for educational and personal use only. Users are responsible for ensuring their use complies with applicable laws and platform terms of service.
+#### Youku固有の問題
+- 地域制限（中国本土からのアクセスが必要な場合）
+- yt-dlpの最新バージョン確認
+- URL形式の自動変換機能
 
-## Author
+### エラーメッセージの解読
 
-wabisuke
+#### HTTP 403 Forbidden
+```
+**Streamlit Cloud での 403エラー解決策:**
+1. requirements.txt で yt-dlp>=2025.01.15 を指定
+2. アプリを再デプロイしてyt-dlpを更新
+3. 「ブラウザクッキーを使用」オプションを試す
+4. 「キャッシュをクリア」してから再試行
+5. しばらく時間をおいてから再試行
+```
+
+## 技術的詳細
+
+### 使用技術
+- **フロントエンド**: Streamlit
+- **ダウンロードエンジン**: yt-dlp
+- **メディア処理**: ffmpeg
+- **実行環境**: Streamlit Cloud
+
+### 403エラー対策の実装
+- 最大5回のリトライ機能
+- 指数バックオフによる待機時間制御
+- 高度なHTTPヘッダー設定
+- 地域バイパス機能
+- SSL証明書チェックの最適化
+
+### 音声処理
+- 最高品質音声ストリームの自動選択
+- MP3形式への変換（192kbps）
+- ffmpegによる高品質処理
+
+### 映像処理
+- 最高画質動画の自動選択
+- MP4形式への変換
+- 音声トラックの保持
+
+## ファイル構成
+
+```
+youtube-youku-downloader/
+├── main.py              # メインアプリケーション（403エラー対策版）
+├── requirements.txt     # Python依存関係
+├── packages.txt         # システムパッケージ（ffmpeg）
+└── README.md           # このファイル
+```
+
+### requirements.txtの内容
+```
+streamlit
+yt-dlp
+ffmpeg-python
+requests
+certifi
+urllib3
+brotli
+websockets
+```
+
+## ライセンスと免責事項
+
+### 利用条件
+- 教育および個人利用のみ
+- 著作権法の遵守
+- プラットフォーム利用規約の遵守
+
+### 免責事項
+- このツールは教育目的で提供されています
+- 作者は利用者による誤用や利用規約違反について責任を負いません
+- Streamlit Cloud環境の制約により一部の動画が利用できない場合があります
+
+### 法的注意事項
+- 著作権で保護されたコンテンツの無断ダウンロードは法的問題を引き起こす可能性があります
+- 各国の著作権法および関連法規を遵守してください
+- 商用利用は禁止されています
+
+## 開発者情報
+
+**作者**: wabisuke
+
+### バージョン情報
+- **現在のバージョン**: 403エラー対策版
+- **対応環境**: Streamlit Cloud最適化
+- **最終更新**: 2025年1月
+
+### 技術サポート
+- 403エラーに関する詳細な対策情報を内蔵
+- Streamlit Cloud環境での動作を前提とした設計
+- 継続的なyt-dlpアップデート対応
 
 ---
 
-**Disclaimer**: This tool is provided as-is for educational purposes. The authors are not responsible for any misuse or violation of terms of service by users.
+**⚠️ 重要**: このツールは個人の学習および研究目的でのみ使用してください。著作権法を遵守し、コンテンツ作成者の権利を尊重することが重要です。
