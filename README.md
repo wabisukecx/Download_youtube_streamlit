@@ -50,8 +50,8 @@
 ### ローカル環境での実行
 ```bash
 # リポジトリのクローン
-git clone [リポジトリURL]
-cd youtube-youku-downloader
+git clone https://github.com/wabisukecx/Download_youtube_streamlit.git
+cd Download_youtube_streamlit
 
 # 必要なパッケージのインストール
 pip install -r requirements.txt
